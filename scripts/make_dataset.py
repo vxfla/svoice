@@ -156,6 +156,7 @@ class dataset():
 
     def gen_scene(self, scenario_num_of_speakers, scene_i, current_write_path):
         S, sig_idx = self.fetch_signals(scenario_num_of_speakers)
+        print(sig_idx)
         scenario_RT60 = round(np.random.uniform(low=0.1, high=1.0), 2)
         x = round(np.random.uniform(low=4, high=7), 2)
         y = round(np.random.uniform(low=4, high=7), 2)
@@ -172,19 +173,25 @@ class dataset():
             angles_name = angles_name + str(int(self.speakers_angles[spk]))+'_'
         angles_name = angles_name[:-1]
 
-        noise = self.fetch_noise()
-        snr = round(np.random.uniform(low=0, high=15), 2)
-        noise_gain = np.sqrt(10 ** (-snr/10) * np.std(Mixed) ** 2 / np.std(noise) ** 2)
-        noise = noise_gain * noise
-        Mixed = Mixed + noise
+        # 先不加噪声
+        # noise = self.fetch_noise()
+        # snr = round(np.random.uniform(low=0, high=15), 2)
+        # noise_gain = np.sqrt(10 ** (-snr/10) * np.std(Mixed) ** 2 / np.std(noise) ** 2)
+        # noise = noise_gain * noise
+        # Mixed = Mixed + noise
 
         mix_file_name = os.path.join(current_write_path, 'mix')
         if not os.path.exists(mix_file_name):
             os.mkdir(mix_file_name)
         filename = '_'.join(map(str, sig_idx))
+        # name = os.path.join(mix_file_name, str(scene_i) + angles_name + '_RT60_' + str(
+        #     round(scenario_RT60, 2)) +
+        #     # '_snr_' + str(snr) + 
+        #     '_fileidx_' + filename + '.wav')
         name = os.path.join(mix_file_name, str(scene_i) + angles_name + '_RT60_' + str(
-            round(scenario_RT60, 2)) + '_snr_' + str(snr) + '_fileidx_' + filename + '.wav')
+            round(scenario_RT60, 2)) + '_fileidx_' + filename + '.wav')
         Mixed = Mixed / 1.2 / np.max(np.abs(Mixed))
+        print(name)
         sf.write(name, Mixed, self.sr)
 
         for spk in range(scenario_num_of_speakers):
@@ -192,13 +199,17 @@ class dataset():
             if not os.path.exists(target_file_name):
                 os.mkdir(target_file_name)
 
+            # name = os.path.join(target_file_name, str(scene_i) + angles_name + '_RT60_' + str(
+            #     round(scenario_RT60, 2)) + 
+            #     # '_snr_' + str(snr) + 
+            #     '_fileidx_' + filename + '.wav')
             name = os.path.join(target_file_name, str(scene_i) + angles_name + '_RT60_' + str(
-                round(scenario_RT60, 2)) + '_snr_' + str(snr) + '_fileidx_' + filename + '.wav')
+                round(scenario_RT60, 2)) + '_fileidx_' + filename + '.wav')
             s = np.convolve(S[spk], H_anechoic[spk], mode='full')
             s = s[0: self.sec * self.sr]
             s = s / 1.2 / np.max(np.abs(s))
+            print(name)
             sf.write(name, s, self.sr)
-
 
 def main(args):
     Data = dataset(args.in_path, args.noise_path, args.sr, args.sec)
